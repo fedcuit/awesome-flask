@@ -1,0 +1,1 @@
+A new customer {{ name }} just joined our website!

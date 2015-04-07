@@ -2,6 +2,7 @@ import os
 
 from flask import Flask, render_template, session, redirect, url_for
 from flask.ext.bootstrap import Bootstrap
+from flask.ext.mail import Mail
 from flask.ext.migrate import Migrate, MigrateCommand
 from flask.ext.script import Manager, Shell
 from flask.ext.sqlalchemy import SQLAlchemy
@@ -9,18 +10,30 @@ from flask.ext.wtf import Form
 from wtforms import StringField, SubmitField
 from wtforms.validators import DataRequired
 
+from mail import async_send_mail
+
 
 __author__ = 'edfeng'
 
 app = Flask(__name__)
 
-app.config['SECRET_KEY'] = """3z&tlt+9_6cj+l69jnva(y*=7--2r)_j%kv6!+key6mb+6xxu5"""
+app.config['SECRET_KEY'] = os.environ.get("FLASKY_SECRET_KEY")
 basedir = os.path.abspath(os.path.dirname(__name__))
 app.config['SQLALCHEMY_DATABASE_URI'] = "sqlite:///" + os.path.join(basedir, 'data.sqlite')
 app.config['SQLALCHEMY_COMMIT_ON_TEARDOWN'] = True
 
 db = SQLAlchemy(app)
 migrate = Migrate(app, db)
+
+app.config['MAIL_SERVER'] = "smtp.googlemail.com"
+app.config['MAIL_PORT'] = 587
+app.config['MAIL_USE_TLS'] = True
+app.config['MAIL_USERNAME'] = os.environ.get('MAIL_USERNAME')
+app.config['MAIL_PASSWORD'] = os.environ.get('MAIL_PASSWORD')
+app.config['ADMIN_EMAIL_ADDRESS'] = os.environ.get('ADMIN_EMAIL_ADDRESS')
+
+mail = Mail(app)
+
 
 class Role(db.Model):
     __tablename__ = 'roles'
@@ -57,6 +70,9 @@ def index():
         if user is None:
             user = User(username=form.name.data)
             db.session.add(user)
+            async_send_mail(app, mail, app.config['MAIL_USERNAME'], app.config['ADMIN_EMAIL_ADDRESS'],
+                            'New Registration!', 'mail/new_registration',
+                            name=form.name.data)
             session['known'] = False
         else:
             session['known'] = True
