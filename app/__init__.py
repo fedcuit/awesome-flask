@@ -3,6 +3,7 @@ from flask.ext.bootstrap import Bootstrap
 from flask.ext.mail import Mail
 from flask.ext.sqlalchemy import SQLAlchemy
 
+print '{}: going to init package app'.format(__name__)
 from config import config
 
 
@@ -21,6 +22,7 @@ def create_app(config_name):
     mail.init_app(app)
     db.init_app(app)
 
+    print "{} import main_blueprint which is defined in main package's init file".format(__name__)
     from .main import main as main_blueprint
 
     app.register_blueprint(main_blueprint)
